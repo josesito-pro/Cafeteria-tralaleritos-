@@ -62,10 +62,17 @@ td{padding:10px;border-bottom:1px solid #f3e8d3}tr:nth-child(even) td{background
 
 <div id="login" class="wrap">
  <div class="hero"><div class="big">🦈</div><h2>¡Bienvenido a Los Tralaleritos del 22!</h2><p class="muted">Tortas, hot dogs y bebidas con sabor a tiburón 👟👟👟</p></div>
- <div class="card login"><h2>🔐 Iniciar sesión</h2>
+ <div class="card login"><h2>🔐 Administrador</h2>
   <input id="usr" placeholder="Usuario"><input id="pwd" type="password" placeholder="Contraseña">
   <button style="width:100%;margin-bottom:8px" onclick="entrar()">Entrar</button>
-  <button class="alt" style="width:100%" onclick="entrarCliente()">🙋 Soy cliente</button><div id="lmsg" class="msg bad"></div></div>
+  <hr style="border:0;border-top:2px dashed #ddd;margin:16px 0"><h2 style="margin-bottom:8px">🎓 Soy estudiante</h2>
+  <input id="ecorreo" type="email" placeholder="Correo institucional">
+  <button class="alt" style="width:100%;margin-bottom:8px" onclick="entrarEstudiante()">Continuar con mi correo</button>
+  <div id="ereg" class="hidden"><p class="muted">Primera vez: completa tus datos</p>
+   <input id="enom" placeholder="Nombre completo"><input id="ematr" placeholder="Matrícula (opcional)">
+   <input id="esem" placeholder="Semestre (ej. 3)"><input id="egru" placeholder="Grupo (ej. B)">
+   <button style="width:100%" onclick="registrarEstudiante()">Guardar y entrar</button></div>
+  <button class="gray" style="width:100%;margin-top:8px" onclick="entrarCliente()">🙋 Entrar sin cuenta</button><div id="lmsg" class="msg bad"></div></div>
 </div>
 
 <div id="cliente" class="wrap hidden">
@@ -85,7 +92,7 @@ td{padding:10px;border-bottom:1px solid #f3e8d3}tr:nth-child(even) td{background
   <table><thead><tr><th>Producto</th><th>Precio</th><th>Promoción</th><th>Descuento %</th><th></th></tr></thead><tbody id="tpromo"></tbody></table></div>
  <div id="p-nuevo" class="card hidden"><h2>➕ Agregar producto</h2>
   <div class="row"><input id="np" placeholder="Nombre del producto"><input id="npr" type="number" min="0" placeholder="Precio"><input id="nps" type="number" min="0" placeholder="Cantidad inicial"><button onclick="nuevoProducto()">Agregar</button></div><div id="amsg" class="msg"></div></div>
- <div id="p-ventas" class="card hidden"><h2>🧾 Registro de ventas</h2><table><thead><tr><th>Fecha</th><th>Detalle</th><th>Total</th><th>Recibido</th><th>Cambio</th></tr></thead><tbody id="tventas"></tbody></table></div>
+ <div id="p-ventas" class="card hidden"><h2>🧾 Registro de ventas</h2><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Detalle</th><th>Total</th><th>Recibido</th><th>Cambio</th></tr></thead><tbody id="tventas"></tbody></table></div>
  <button id="reporte" onclick="reporte()">📄 Reporte del día</button>
 </div>
 <div id="ticketmodal" class="hidden"><div class="tkbox"><div id="ticketbody"></div><div class="row" style="margin-top:14px"><button onclick="ticketPDF()">📄 Descargar PDF</button><button class="gray" onclick="cerrarTicket()">Cerrar</button></div></div></div>
@@ -95,6 +102,8 @@ td{padding:10px;border-bottom:1px solid #f3e8d3}tr:nth-child(even) td{background
 <script>
 const NOMBRE_CAFE="LOS TRALALERITOS DEL 22", USUARIOS={"JOSE":"1234","ALBERTO":"4321"}, KEY="tralaleritos_data_v1";
 let datos,sesion=null,carrito={};
+/* Dominio del correo institucional (ej. "@miescuela.edu.mx"). Si lo dejas vacio, acepta cualquier correo. */
+const DOMINIO_INSTITUCIONAL="@cetis22.edu.mx";
 /* ====== BASE DE DATOS EN LINEA (Firebase) ======
    Pega aqui los datos de tu proyecto. Si databaseURL queda vacio, la pagina funciona en modo local. */
 const FIREBASE_CONFIG={
@@ -106,7 +115,7 @@ const FIREBASE_CONFIG={
 };
 const INICIAL=()=>({productos:[{nombre:"TORTA DE JAMÓN",precio:32,stock:30},{nombre:"HOT DOG",precio:28,stock:15},{nombre:"AGUA NATURAL",precio:20,stock:25}],ventas:[]});
 let db=null;
-function norm(v){if(!v||typeof v!=="object")v=INICIAL();v.productos=Object.values(v.productos||{});v.ventas=Object.values(v.ventas||{});return v}
+function norm(v){if(!v||typeof v!=="object")v=INICIAL();v.productos=Object.values(v.productos||{});v.ventas=Object.values(v.ventas||{});v.estudiantes=v.estudiantes||{};return v}
 function cargar(){
  datos=norm(null);
  if(FIREBASE_CONFIG.databaseURL){
@@ -136,8 +145,20 @@ const pr=p=>Math.round(p.precio*(1-(p.promo||0)/100)*100)/100;
 function mostrar(v){["login","cliente","admin"].forEach(x=>$(x).classList.toggle("hidden",x!==v));$("userbox").classList.toggle("hidden",v==="login")}
 function entrar(){const u=$("usr").value.trim().toUpperCase(),p=$("pwd").value;
  if(USUARIOS[u]===p){sesion=u;$("uname").textContent="👤 "+u;$("lmsg").textContent="";tab("inv");mostrar("admin")}else $("lmsg").textContent="Usuario o contraseña incorrectos"}
-function entrarCliente(){sesion=null;carrito={};$("uname").textContent="🙋 Cliente";pintarCliente();mostrar("cliente")}
-function salir(){sesion=null;carrito={};$("usr").value=$("pwd").value="";mostrar("login")}
+let alumno=null;
+const ekey=c=>c.trim().toLowerCase().replace(/\./g,",");
+function entrarCliente(){alumno=null;iniciarCliente("🙋 Cliente")}
+function iniciarCliente(t){sesion=null;carrito={};$("uname").textContent=t;pintarCliente();mostrar("cliente")}
+function entrarEstudiante(){const c=$("ecorreo").value.trim().toLowerCase();
+ if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c)){toast("Escribe un correo válido");return}
+ if(DOMINIO_INSTITUCIONAL&&!c.endsWith(DOMINIO_INSTITUCIONAL.toLowerCase())){toast("Usa tu correo institucional ("+DOMINIO_INSTITUCIONAL+")");return}
+ const e=(datos.estudiantes||{})[ekey(c)];
+ if(e){alumno=e;iniciarCliente("🎓 "+e.nombre)}else{$("ereg").classList.remove("hidden");toast("Primera vez: completa tus datos")}}
+function registrarEstudiante(){const c=$("ecorreo").value.trim().toLowerCase(),n=$("enom").value.trim(),sm=$("esem").value.trim(),g=$("egru").value.trim().toUpperCase(),mt=$("ematr").value.trim();
+ if(!n||!sm||!g){toast("Completa nombre, semestre y grupo");return}
+ let fin={correo:c,nombre:n,semestre:sm,grupo:g,matricula:mt};
+ mutar(d=>{if(d.estudiantes[ekey(c)])fin=d.estudiantes[ekey(c)];else d.estudiantes[ekey(c)]=fin},ok=>{if(ok){alumno=fin;iniciarCliente("🎓 "+fin.nombre)}else toast("No se pudo guardar, intenta de nuevo")})}
+function salir(){sesion=null;alumno=null;$("ereg").classList.add("hidden");$("ecorreo").value="";carrito={};$("usr").value=$("pwd").value="";mostrar("login")}
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&!$("login").classList.contains("hidden"))entrar()});
 
 function pintarCliente(){
@@ -162,7 +183,7 @@ function pagar(){const total=totalCarrito(),rec=parseFloat($("recibido").value),
   for(const i of Object.keys(carrito)){const q=carrito[i];if(q>0){const p=d.productos[i];if(!p||p.stock<q){razon="Ya no hay suficiente inventario de un producto. Revisa tu pedido.";return false}
    p.stock-=q;const c=pr(p);tot+=q*c;items.push({nombre:p.nombre,cant:q,precio:c,promo:p.promo||0})}}
   tot=Math.round(tot*100)/100;if(rec<tot){razon="El precio cambió. El total ahora es $"+tot;return false}
-  venta={folio:String(Date.now()).slice(-6),fecha:new Date().toISOString(),items,total:tot,recibido:rec,cambio:Math.round((rec-tot)*100)/100};d.ventas.push(venta)},
+  venta={folio:String(Date.now()).slice(-6),fecha:new Date().toISOString(),estudiante:alumno?{nombre:alumno.nombre,correo:alumno.correo,semestre:alumno.semestre,grupo:alumno.grupo,matricula:alumno.matricula||""}:null,items,total:tot,recibido:rec,cambio:Math.round((rec-tot)*100)/100};d.ventas.push(venta)},
  ok=>{if(!ok){m.className="msg bad";m.textContent=razon||"No se pudo completar la venta, intenta de nuevo.";return}
   const cambio=Math.round((rec-tot)*100)/100;carrito={};$("recibido").value="";
   m.className="msg ok";m.textContent=cambio>0?`¡Gracias! Tu sobrante es: $${cambio.toFixed(2)} 🎉`:"¡Gracias! Pago exacto 🎉";pintarCliente();mostrarTicket(venta)})}
@@ -172,7 +193,7 @@ function pintarAdmin(){
  $("tinv").innerHTML=datos.productos.map((p,i)=>`<tr><td>${emoji(p.nombre)} ${p.nombre}</td><td>$${p.precio}</td><td><b>${p.stock}</b></td><td><div class="row"><input class="small" id="add${i}" type="number" min="1" placeholder="Cant."><button class="alt" onclick="sumarStock(${i})">Agregar</button></div></td></tr>`).join("");
  $("tpromo").innerHTML=datos.productos.map((p,i)=>`<tr><td>${emoji(p.nombre)} ${p.nombre}</td><td>$${p.precio}</td><td>${p.promo>0?`<b class="bad">🔥 -${p.promo}% → $${pr(p)}</b>`:"<span class='muted'>Sin promoción</span>"}</td>
   <td><input class="small" id="pm${i}" type="number" min="1" max="90" placeholder="%" value="${p.promo||""}"></td><td><div class="row"><button onclick="setPromo(${i})">Aplicar</button><button class="gray" onclick="quitarPromo(${i})">Quitar</button></div></td></tr>`).join("");
- $("tventas").innerHTML=datos.ventas.length?datos.ventas.slice().reverse().map(v=>`<tr><td>${new Date(v.fecha).toLocaleString("es-MX")}</td><td>${v.items.map(x=>x.cant+" x "+x.nombre).join(", ")}</td><td>$${v.total}</td><td>$${v.recibido}</td><td>$${v.cambio.toFixed(2)}</td></tr>`).join(""):"<tr><td colspan='5' class='muted'>Sin ventas registradas.</td></tr>";
+ $("tventas").innerHTML=datos.ventas.length?datos.ventas.slice().reverse().map(v=>`<tr><td>${new Date(v.fecha).toLocaleString("es-MX")}${v.folio?"<br><span class='muted'>#"+v.folio+"</span>":""}</td><td>${v.estudiante?"🎓 <b>"+v.estudiante.nombre+"</b><br><span class='muted'>Sem. "+v.estudiante.semestre+" · Grupo "+v.estudiante.grupo+(v.estudiante.matricula?"<br>Mat. "+v.estudiante.matricula:"")+"<br>"+v.estudiante.correo+"</span>":"<span class='muted'>🙋 Cliente general</span>"}</td><td>${v.items.map(x=>x.cant+" x "+x.nombre).join(", ")}</td><td>$${v.total}</td><td>$${v.recibido}</td><td>$${v.cambio.toFixed(2)}</td></tr>`).join(""):"<tr><td colspan='6' class='muted'>Sin ventas registradas.</td></tr>";
  statsAdmin()}
 function statsAdmin(){const a=analisis();$("s1").textContent=datos.productos.reduce((s,p)=>s+p.stock,0);$("s2").textContent="$"+a.totalDia;$("s3").textContent=a.n}
 function sumarStock(i){const n=parseInt($("add"+i).value);if(n>0)mutar(d=>{d.productos[i].stock+=n},()=>toast("📦 Inventario actualizado"))}
@@ -235,18 +256,18 @@ function reporte(){
  if(!window.open(d.output("bloburl"),"_blank"))d.save("Reporte_Tralaleritos.pdf")}
 let ultimaVenta=null;
 function mostrarTicket(v){if(!v)return;ultimaVenta=v;
- $("ticketbody").innerHTML=`<div class="tk-c"><div style="font-size:2.6rem">🦈</div><b>${NOMBRE_CAFE}</b><br>TICKET DE COMPRA<br>Folio: <b>#${v.folio}</b><br>${new Date(v.fecha).toLocaleString("es-MX")}</div><hr>`
+ $("ticketbody").innerHTML=`<div class="tk-c"><div style="font-size:2.6rem">🦈</div><b>${NOMBRE_CAFE}</b><br>TICKET DE COMPRA<br>Folio: <b>#${v.folio}</b><br>${new Date(v.fecha).toLocaleString("es-MX")}</div>${v.estudiante?`<hr><div>🎓 <b>${v.estudiante.nombre}</b><br>Semestre: ${v.estudiante.semestre} · Grupo: ${v.estudiante.grupo}${v.estudiante.matricula?"<br>Matrícula: "+v.estudiante.matricula:""}<br>${v.estudiante.correo}</div>`:""}<hr>`
  +v.items.map(x=>`<div class="tk-r"><span>${emoji(x.nombre)} ${x.cant} x ${x.nombre}${x.promo>0?" 🔥-"+x.promo+"%":""}</span><span>$${(x.cant*x.precio).toFixed(2)}</span></div>`).join("")
  +`<hr><div class="tk-r"><b>TOTAL</b><b>$${v.total.toFixed(2)}</b></div><div class="tk-r"><span>Recibido</span><span>$${v.recibido.toFixed(2)}</span></div><div class="tk-r"><span>Cambio</span><span>$${v.cambio.toFixed(2)}</span></div><hr><div class="tk-c"><b>¡Gracias por tu compra!</b> 🦈👟<br>Vuelve pronto</div>`;
  $("ticketmodal").classList.remove("hidden")}
 function cerrarTicket(){$("ticketmodal").classList.add("hidden")}
 function ticketPDF(){const v=ultimaVenta;if(!v)return;if(!window.jspdf){alert("No se pudo cargar la librería de PDF. Verifica tu conexión.");return}
- const{jsPDF}=window.jspdf,d=new jsPDF({unit:"mm",format:[80,100+v.items.length*7]});let y=8;
+ const{jsPDF}=window.jspdf,d=new jsPDF({unit:"mm",format:[80,100+v.items.length*7+(v.estudiante?36:0)]});let y=8;
  d.addImage(eimg("🦈"),"PNG",32,y,16,16);y+=22;
- const c=(t,sz=10,b=false)=>{d.setFont("helvetica",b?"bold":"normal");d.setFontSize(sz);d.text(t,40,y,{align:"center"});y+=sz/2+1.5};
+ const c=(t,sz=10,b=false)=>{d.setFont("helvetica",b?"bold":"normal");d.setFontSize(sz);d.splitTextToSize(t,72).forEach(l=>{d.text(l,40,y,{align:"center"});y+=sz/2+1.5})};
  const raya=()=>c("- - - - - - - - - - - - - - - - - - - -",8);
  const r=(a,b,bold)=>{d.setFont("helvetica",bold?"bold":"normal");d.setFontSize(9);d.text(a,6,y);d.text(b,74,y,{align:"right"});y+=5.5};
- c(NOMBRE_CAFE,11,true);c("TICKET DE COMPRA",9);c("Folio: #"+v.folio,9,true);c(new Date(v.fecha).toLocaleString("es-MX"),8);raya();
+ c(NOMBRE_CAFE,11,true);c("TICKET DE COMPRA",9);c("Folio: #"+v.folio,9,true);c(new Date(v.fecha).toLocaleString("es-MX"),8);if(v.estudiante){const e=v.estudiante;raya();c("ALUMNO: "+e.nombre,9,true);c("Semestre: "+e.semestre+"   Grupo: "+e.grupo,9);if(e.matricula)c("Matricula: "+e.matricula,9);c(e.correo,8)}raya();
  v.items.forEach(x=>{d.addImage(eimg(emoji(x.nombre)),"PNG",6,y-3.8,5,5);d.setFont("helvetica","normal");d.setFontSize(9);
   d.text(x.cant+" x "+x.nombre+(x.promo>0?" (-"+x.promo+"%)":""),12,y);d.text("$"+(x.cant*x.precio).toFixed(2),74,y,{align:"right"});y+=6});
  raya();r("TOTAL","$"+v.total.toFixed(2),true);r("Recibido","$"+v.recibido.toFixed(2));r("Cambio","$"+v.cambio.toFixed(2));raya();
