@@ -99,7 +99,7 @@ td{padding:10px;border-bottom:1px solid #f3e8d3}tr:nth-child(even) td{background
 <div id="admin" class="wrap hidden">
  <div class="stats"><div class="stat">📦 Piezas en inventario<b id="s1">0</b></div><div class="stat">💰 Vendido hoy<b id="s2">$0</b></div><div class="stat">🧾 Ventas hoy<b id="s3">0</b></div></div>
  <div class="tabs"><button id="t-inv" class="on" onclick="tab('inv')">📦 Inventario</button><button id="t-promo" onclick="tab('promo')">🔥 Promociones</button><button id="t-nuevo" onclick="tab('nuevo')">➕ Agregar producto</button><button id="t-ventas" onclick="tab('ventas')">🧾 Ventas</button><button id="t-prov" onclick="tab('prov')">🚚 Proveedor</button></div>
- <div id="p-inv" class="card"><h2>📦 Inventario</h2><table><thead><tr><th>Producto</th><th>Precio</th><th>Inventario</th><th>Agregar inventario</th><th>Imagen</th></tr></thead><tbody id="tinv"></tbody></table></div>
+ <div id="p-inv" class="card"><h2>📦 Inventario</h2><table><thead><tr><th>Producto</th><th>Precio</th><th>Inventario</th><th>Agregar inventario</th><th>Imagen</th><th>Categoría</th><th>Eliminar</th></tr></thead><tbody id="tinv"></tbody></table></div>
  <div id="p-promo" class="card hidden"><h2>🔥 Promociones</h2><p class="muted">Elige el descuento (%) para cada producto. Los clientes lo verán al instante.</p>
   <table><thead><tr><th>Producto</th><th>Precio</th><th>Promoción</th><th>Descuento %</th><th></th></tr></thead><tbody id="tpromo"></tbody></table></div>
  <div id="p-nuevo" class="card hidden"><h2>➕ Agregar producto</h2>
@@ -155,7 +155,7 @@ function mutar(fn,ok){
  else{const c=JSON.parse(JSON.stringify(datos));if(fn(c)===false){ok&&ok(false);return}datos=c;guardar();refrescar();ok&&ok(true)}
 }
 function refrescar(){
- if(!$("cliente").classList.contains("hidden"))pintarCliente();
+ if(!$("cliente").classList.contains("hidden")){if(Object.keys(carrito).some(i=>carrito[i]>0&&(!datos.productos[i]||datos.productos[i].nombre!==carNom[i]))){carrito={};carNom={};toast("El catálogo cambió, vuelve a armar tu pedido")}pintarCliente()}
  if(!$("admin").classList.contains("hidden")){const f=document.activeElement;if(f&&f.tagName==="INPUT"&&$("admin").contains(f))statsAdmin();else pintarAdmin()}
 }
 const $=id=>document.getElementById(id);
@@ -183,7 +183,7 @@ document.addEventListener("keydown",e=>{if(e.key!=="Enter")return;if(!$("f-adm")
 function elegir(t){$("elegir").classList.add("hidden");$("f-est").classList.toggle("hidden",t!=="est");$("f-adm").classList.toggle("hidden",t!=="adm")}
 function volver(){["f-est","f-adm"].forEach(x=>$(x).classList.add("hidden"));$("elegir").classList.remove("hidden");$("ereg").classList.add("hidden")}
 let catActual="comida";
-function categoria(p){if(p.cat)return p.cat;return /AGUA|REFRESCO|JUGO|CAF|T[EÉ]\b|LICUADO|SODA|COCA|LIMONADA|BEBIDA|LECHE|MALTEADA/i.test(p.nombre)?"bebida":"comida"}
+function categoria(p){if(p.cat)return p.cat;return /AGUA|REFRESCO|JUGO|CAF|\bT[EÉ]\b|LICUADO|SODA|COCA|LIMONADA|BEBIDA|LECHE|MALTEADA/i.test(p.nombre)?"bebida":"comida"}
 function setCat(c){catActual=c;$("c-comida").classList.toggle("on",c==="comida");$("c-bebida").classList.toggle("on",c==="bebida");pintarCliente()}
 function picHTML(p){const e=emoji(p.nombre);return p.img?`<div class="pic hasimg"><img class="pimg" src="${p.img}" alt="${p.nombre}" onerror="this.parentNode.classList.remove('hasimg');this.replaceWith(document.createTextNode('${e}'))"></div>`:`<div class="pic">${e}</div>`}
 
@@ -199,14 +199,15 @@ function pintarCliente(){
  $("carrito").innerHTML=it.length?"<table>"+it.map(i=>{const p=datos.productos[i];return`<tr><td>${emoji(p.nombre)} ${p.nombre}</td><td>${carrito[i]} x $${pr(p)}</td><td>$${(carrito[i]*pr(p)).toFixed(2)}</td></tr>`}).join("")+"</table>":"<p class='muted'>Aún no has agregado productos.</p>";
  $("total").textContent=totalCarrito()}
 function totalCarrito(){return Math.round(Object.keys(carrito).reduce((s,i)=>s+carrito[i]*pr(datos.productos[i]),0)*100)/100}
-function agregar(i){if((carrito[i]||0)<datos.productos[i].stock)carrito[i]=(carrito[i]||0)+1;pintarCliente()}
+let carNom={};
+function agregar(i){if((carrito[i]||0)<datos.productos[i].stock){carrito[i]=(carrito[i]||0)+1;carNom[i]=datos.productos[i].nombre}pintarCliente()}
 function quitar(i){if(carrito[i]>0)carrito[i]--;pintarCliente()}
 function pagar(){const total=totalCarrito(),rec=parseFloat($("recibido").value),m=$("pmsg");
  if(total===0){m.className="msg bad";m.textContent="Agrega al menos un producto.";return}
  if(isNaN(rec)||rec<total){m.className="msg bad";m.textContent="Dinero insuficiente. Faltan $"+(total-(isNaN(rec)?0:rec)).toFixed(2);return}
  let tot=0,razon="",venta=null;
  mutar(d=>{tot=0;razon="";const items=[];
-  for(const i of Object.keys(carrito)){const q=carrito[i];if(q>0){const p=d.productos[i];if(!p||p.stock<q){razon="Ya no hay suficiente inventario de un producto. Revisa tu pedido.";return false}
+  for(const i of Object.keys(carrito)){const q=carrito[i];if(q>0){const p=d.productos[i];if(!p||p.nombre!==carNom[i]||p.stock<q){razon="Ya no hay suficiente inventario de un producto. Revisa tu pedido.";return false}
    p.stock-=q;const c=pr(p);tot+=q*c;items.push({nombre:p.nombre,cant:q,precio:c,promo:p.promo||0})}}
   tot=Math.round(tot*100)/100;if(rec<tot){razon="El precio cambió. El total ahora es $"+tot;return false}
   venta={folio:String(Date.now()).slice(-6),fecha:new Date().toISOString(),estudiante:alumno?{nombre:alumno.nombre,correo:alumno.correo,semestre:alumno.semestre,grupo:alumno.grupo,matricula:alumno.matricula||""}:null,items,total:tot,recibido:rec,cambio:Math.round((rec-tot)*100)/100};d.ventas.push(venta)},
@@ -216,7 +217,7 @@ function pagar(){const total=totalCarrito(),rec=parseFloat($("recibido").value),
 
 function tab(t){["inv","promo","nuevo","ventas","prov"].forEach(x=>{$("p-"+x).classList.toggle("hidden",x!==t);$("t-"+x).classList.toggle("on",x===t)});pintarAdmin()}
 function pintarAdmin(){
- $("tinv").innerHTML=datos.productos.map((p,i)=>`<tr><td>${emoji(p.nombre)} ${p.nombre}</td><td>$${p.precio}</td><td><b>${p.stock}</b></td><td><div class="row"><input class="small" id="add${i}" type="number" min="1" placeholder="Cant."><button class="alt" onclick="sumarStock(${i})">Agregar</button></div></td><td><div class="row"><input id="im${i}" value="${p.img||""}" placeholder="archivo o URL"><button class="alt" onclick="setImg(${i})">🖼️</button></div></td></tr>`).join("");
+ $("tinv").innerHTML=datos.productos.map((p,i)=>`<tr><td>${emoji(p.nombre)} ${p.nombre}</td><td>$${p.precio}</td><td><b>${p.stock}</b></td><td><div class="row"><input class="small" id="add${i}" type="number" min="1" placeholder="Cant."><button class="alt" onclick="sumarStock(${i})">Agregar</button></div></td><td><div class="row"><input id="im${i}" value="${p.img||""}" placeholder="archivo o URL"><button class="alt" onclick="setImg(${i})">🖼️</button></div></td><td><select onchange="cambiarCat(${i},this.value)"><option value="comida" ${categoria(p)==="comida"?"selected":""}>🍔 Comida</option><option value="bebida" ${categoria(p)==="bebida"?"selected":""}>🥤 Bebida</option></select></td><td><button class="gray" onclick="borrarProducto(${i})">🗑️</button></td></tr>`).join("");
  $("tpromo").innerHTML=datos.productos.map((p,i)=>`<tr><td>${emoji(p.nombre)} ${p.nombre}</td><td>$${p.precio}</td><td>${p.promo>0?`<b class="bad">🔥 -${p.promo}% → $${pr(p)}</b>`:"<span class='muted'>Sin promoción</span>"}</td>
   <td><input class="small" id="pm${i}" type="number" min="1" max="90" placeholder="%" value="${p.promo||""}"></td><td><div class="row"><button onclick="setPromo(${i})">Aplicar</button><button class="gray" onclick="quitarPromo(${i})">Quitar</button></div></td></tr>`).join("");
  $("tventas").innerHTML=datos.ventas.length?datos.ventas.slice().reverse().map(v=>`<tr><td>${new Date(v.fecha).toLocaleString("es-MX")}${v.folio?"<br><span class='muted'>#"+v.folio+"</span>":""}</td><td>${v.estudiante?"🎓 <b>"+v.estudiante.nombre+"</b><br><span class='muted'>Sem. "+v.estudiante.semestre+" · Grupo "+v.estudiante.grupo+(v.estudiante.matricula?"<br>Mat. "+v.estudiante.matricula:"")+"<br>"+v.estudiante.correo+"</span>":"<span class='muted'>🙋 Cliente general</span>"}</td><td>${v.items.map(x=>x.cant+" x "+x.nombre).join(", ")}</td><td>$${v.total}</td><td>$${v.recibido}</td><td>$${v.cambio.toFixed(2)}</td></tr>`).join(""):"<tr><td colspan='6' class='muted'>Sin ventas registradas.</td></tr>";
@@ -247,6 +248,10 @@ function recomendaciones(a){const r=[];
 const _ei={};function eimg(e){if(_ei[e])return _ei[e];const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d");x.font="96px 'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(e,64,70);return _ei[e]=c.toDataURL("image/png")}
 const LOGOS={escuela:null,cafe:null};
 function cargarLogo(src,k){const im=new Image();im.onload=()=>{try{const c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d"),r=Math.min(256/im.width,256/im.height),w=im.width*r,h=im.height*r;x.drawImage(im,(256-w)/2,(256-h)/2,w,h);LOGOS[k]=c.toDataURL("image/png")}catch(e){}};im.src=src}
+function cambiarCat(i,v){mutar(d=>{d.productos[i].cat=v},()=>toast("Categoría actualizada"))}
+function borrarProducto(i){const p=datos.productos[i];if(!p)return;const nom=p.nombre;
+ if(!confirm("¿Eliminar \""+nom+"\" del inventario y del catálogo? Esta acción no se puede deshacer."))return;
+ mutar(d=>{if(!d.productos[i]||d.productos[i].nombre!==nom)return false;d.productos.splice(i,1)},ok=>toast(ok?"🗑️ Producto eliminado":"No se pudo eliminar, intenta de nuevo"))}
 function setImg(i){const v=$("im"+i).value.trim();mutar(d=>{d.productos[i].img=v},()=>toast("🖼️ Imagen actualizada"))}
 
 /* ---- Proveedor ---- */
