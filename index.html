@@ -103,7 +103,7 @@ td{padding:10px;border-bottom:1px solid #f3e8d3}tr:nth-child(even) td{background
  <div id="p-promo" class="card hidden"><h2>🔥 Promociones</h2><p class="muted">Elige el descuento (%) para cada producto. Los clientes lo verán al instante.</p>
   <table><thead><tr><th>Producto</th><th>Precio</th><th>Promoción</th><th>Descuento %</th><th></th></tr></thead><tbody id="tpromo"></tbody></table></div>
  <div id="p-nuevo" class="card hidden"><h2>➕ Agregar producto</h2>
-  <div class="row"><input id="np" placeholder="Nombre del producto"><input id="npr" type="number" min="0" placeholder="Precio"><input id="nps" type="number" min="0" placeholder="Cantidad inicial"><select id="npcat"><option value="comida">🍔 Comida</option><option value="bebida">🥤 Bebida</option></select><input id="npimg" placeholder="Imagen (archivo o URL, opcional)"><button onclick="nuevoProducto()">Agregar</button></div><div id="amsg" class="msg"></div></div>
+  <div class="row"><input id="np" placeholder="Nombre del producto"><input id="npr" type="number" min="0" placeholder="Precio"><input id="nps" type="number" min="0" placeholder="Cantidad inicial"><select id="npcat"><option value="comida">🍔 Comida</option><option value="bebida">🥤 Bebida</option></select><button type="button" class="alt" onclick="document.getElementById('npfile').click()">🖼️ Imagen</button><input id="npfile" type="file" accept="image/*" class="hidden" onchange="elegirImgNuevo(this)"><span id="npimgok" class="muted"></span><button onclick="nuevoProducto()">Agregar</button></div><div id="amsg" class="msg"></div></div>
  <div id="p-ventas" class="card hidden"><h2>🧾 Registro de ventas</h2><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Detalle</th><th>Total</th><th>Recibido</th><th>Cambio</th></tr></thead><tbody id="tventas"></tbody></table></div>
  <div id="p-prov" class="card hidden"><h2>🚚 Proveedor</h2>
   <p class="muted">Solicita producto a tu proveedor por correo (el correo del proveedor no es institucional).</p>
@@ -134,17 +134,17 @@ const FIREBASE_CONFIG={
   appId:"1:409665086324:web:d55fe581b654855162c221"
 };
 const INICIAL=()=>({productos:[{nombre:"TORTA DE JAMÓN",precio:32,stock:30},{nombre:"HOT DOG",precio:28,stock:15},{nombre:"AGUA NATURAL",precio:20,stock:25}],ventas:[]});
-let db=null;
+let db=null,db2=null,IMGS={},npImg=null;
 function norm(v){if(!v||typeof v!=="object")v=INICIAL();v.productos=Object.values(v.productos||{});v.ventas=Object.values(v.ventas||{});v.estudiantes=v.estudiantes||{};v.solicitudes=Object.values(v.solicitudes||{});return v}
 function cargar(){
  datos=norm(null);
  if(FIREBASE_CONFIG.databaseURL){
   firebase.initializeApp(FIREBASE_CONFIG);
-  const base=firebase.database();db=base.ref("cafeteria");
+  const base=firebase.database();db=base.ref("cafeteria");db2=base.ref("imagenes");db2.on("value",sn=>{IMGS=sn.val()||{};refrescar()},e=>alert("No se pueden leer las imágenes. Revisa las reglas de Firebase (nodo imagenes): "+e.message));
   db.on("value",sn=>{if(sn.val()===null){db.set(INICIAL());return}datos=norm(sn.val());refrescar()},e=>alert("Error con la base de datos: "+e.message));
   base.ref(".info/connected").on("value",sn=>{$("estado").textContent=sn.val()?"🟢 En línea (datos compartidos)":"🔴 Sin conexión"});
  }else{
-  try{datos=norm(JSON.parse(localStorage.getItem(KEY)))}catch(e){datos=norm(null)}
+  try{datos=norm(JSON.parse(localStorage.getItem(KEY)))}catch(e){datos=norm(null)}try{IMGS=JSON.parse(localStorage.getItem(KEY+"_img"))||{}}catch(e){}
   $("estado").textContent="🟡 Modo local (sin base de datos)";
  }
 }
@@ -185,7 +185,7 @@ function volver(){["f-est","f-adm"].forEach(x=>$(x).classList.add("hidden"));$("
 let catActual="comida";
 function categoria(p){if(p.cat)return p.cat;return /AGUA|REFRESCO|JUGO|CAF|\bT[EÉ]\b|LICUADO|SODA|COCA|LIMONADA|BEBIDA|LECHE|MALTEADA/i.test(p.nombre)?"bebida":"comida"}
 function setCat(c){catActual=c;$("c-comida").classList.toggle("on",c==="comida");$("c-bebida").classList.toggle("on",c==="bebida");pintarCliente()}
-function picHTML(p){const e=emoji(p.nombre);return p.img?`<div class="pic hasimg"><img class="pimg" src="${p.img}" alt="${p.nombre}" onerror="this.parentNode.classList.remove('hasimg');this.replaceWith(document.createTextNode('${e}'))"></div>`:`<div class="pic">${e}</div>`}
+function picHTML(p){const e=emoji(p.nombre),src=(p.imgId&&IMGS[p.imgId])||p.img;return src?`<div class="pic hasimg"><img class="pimg" src="${src}" alt="${p.nombre}" onerror="this.parentNode.classList.remove('hasimg');this.replaceWith(document.createTextNode('${e}'))"></div>`:`<div class="pic">${e}</div>`}
 
 function pintarCliente(){
  const pro=datos.productos.filter(p=>p.promo>0);
@@ -217,7 +217,7 @@ function pagar(){const total=totalCarrito(),rec=parseFloat($("recibido").value),
 
 function tab(t){["inv","promo","nuevo","ventas","prov"].forEach(x=>{$("p-"+x).classList.toggle("hidden",x!==t);$("t-"+x).classList.toggle("on",x===t)});pintarAdmin()}
 function pintarAdmin(){
- $("tinv").innerHTML=datos.productos.map((p,i)=>`<tr><td>${emoji(p.nombre)} ${p.nombre}</td><td>$${p.precio}</td><td><b>${p.stock}</b></td><td><div class="row"><input class="small" id="add${i}" type="number" min="1" placeholder="Cant."><button class="alt" onclick="sumarStock(${i})">Agregar</button></div></td><td><div class="row"><input id="im${i}" value="${p.img||""}" placeholder="archivo o URL"><button class="alt" onclick="setImg(${i})">🖼️</button></div></td><td><select onchange="cambiarCat(${i},this.value)"><option value="comida" ${categoria(p)==="comida"?"selected":""}>🍔 Comida</option><option value="bebida" ${categoria(p)==="bebida"?"selected":""}>🥤 Bebida</option></select></td><td><button class="gray" onclick="borrarProducto(${i})">🗑️</button></td></tr>`).join("");
+ $("tinv").innerHTML=datos.productos.map((p,i)=>`<tr><td>${emoji(p.nombre)} ${p.nombre}</td><td><div class="row"><input class="small" id="pp${i}" type="number" min="0" step="0.5" value="${p.precio}"><button class="alt" onclick="setPrecio(${i})">💲</button></div></td><td><b>${p.stock}</b></td><td><div class="row"><input class="small" id="add${i}" type="number" min="1" placeholder="Cant."><button class="alt" onclick="sumarStock(${i})">Agregar</button></div></td><td><div class="row"><button class="alt" onclick="subirImg(${i})">🖼️ Imagen</button>${(p.imgId&&IMGS[p.imgId])||p.img?`<button class="gray" onclick="quitarImg(${i})">✖</button>`:""}</div></td><td><select onchange="cambiarCat(${i},this.value)"><option value="comida" ${categoria(p)==="comida"?"selected":""}>🍔 Comida</option><option value="bebida" ${categoria(p)==="bebida"?"selected":""}>🥤 Bebida</option></select></td><td><button class="gray" onclick="borrarProducto(${i})">🗑️</button></td></tr>`).join("");
  $("tpromo").innerHTML=datos.productos.map((p,i)=>`<tr><td>${emoji(p.nombre)} ${p.nombre}</td><td>$${p.precio}</td><td>${p.promo>0?`<b class="bad">🔥 -${p.promo}% → $${pr(p)}</b>`:"<span class='muted'>Sin promoción</span>"}</td>
   <td><input class="small" id="pm${i}" type="number" min="1" max="90" placeholder="%" value="${p.promo||""}"></td><td><div class="row"><button onclick="setPromo(${i})">Aplicar</button><button class="gray" onclick="quitarPromo(${i})">Quitar</button></div></td></tr>`).join("");
  $("tventas").innerHTML=datos.ventas.length?datos.ventas.slice().reverse().map(v=>`<tr><td>${new Date(v.fecha).toLocaleString("es-MX")}${v.folio?"<br><span class='muted'>#"+v.folio+"</span>":""}</td><td>${v.estudiante?"🎓 <b>"+v.estudiante.nombre+"</b><br><span class='muted'>Sem. "+v.estudiante.semestre+" · Grupo "+v.estudiante.grupo+(v.estudiante.matricula?"<br>Mat. "+v.estudiante.matricula:"")+"<br>"+v.estudiante.correo+"</span>":"<span class='muted'>🙋 Cliente general</span>"}</td><td>${v.items.map(x=>x.cant+" x "+x.nombre).join(", ")}</td><td>$${v.total}</td><td>$${v.recibido}</td><td>$${v.cambio.toFixed(2)}</td></tr>`).join(""):"<tr><td colspan='6' class='muted'>Sin ventas registradas.</td></tr>";
@@ -228,7 +228,7 @@ function setPromo(i){const n=parseFloat($("pm"+i).value);if(!(n>0&&n<=90)){toast
 function quitarPromo(i){mutar(d=>{d.productos[i].promo=0},()=>toast("Promoción quitada"))}
 function nuevoProducto(){const n=$("np").value.trim().toUpperCase(),p=parseFloat($("npr").value),s=parseInt($("nps").value),m=$("amsg");
  if(!n||isNaN(p)||p<0||isNaN(s)||s<0){m.className="msg bad";m.textContent="Completa nombre, precio y cantidad inicial.";return}
- mutar(d=>{d.productos.push({nombre:n,precio:p,stock:s,cat:$("npcat").value,img:$("npimg").value.trim()})},()=>{$("np").value=$("npr").value=$("nps").value=$("npimg").value="";m.className="msg ok";m.textContent="¡Producto agregado!"})}
+ const nid=npImg?"i"+Date.now():"";if(npImg)guardarImagen(nid,npImg,"");mutar(d=>{d.productos.push({nombre:n,precio:p,stock:s,cat:$("npcat").value,imgId:nid})},()=>{$("np").value=$("npr").value=$("nps").value="";npImg=null;$("npimgok").textContent="";m.className="msg ok";m.textContent="¡Producto agregado!"})}
 
 function analisis(){const hoy=new Date().toDateString(),vh=datos.ventas.filter(v=>new Date(v.fecha).toDateString()===hoy),mapa={};
  datos.productos.forEach(p=>mapa[p.nombre]={cant:0,monto:0,p});
@@ -251,7 +251,20 @@ function cargarLogo(src,k){const im=new Image();im.onload=()=>{try{const c=docum
 function cambiarCat(i,v){mutar(d=>{d.productos[i].cat=v},()=>toast("Categoría actualizada"))}
 function borrarProducto(i){const p=datos.productos[i];if(!p)return;const nom=p.nombre;
  if(!confirm("¿Eliminar \""+nom+"\" del inventario y del catálogo? Esta acción no se puede deshacer."))return;
- mutar(d=>{if(!d.productos[i]||d.productos[i].nombre!==nom)return false;d.productos.splice(i,1)},ok=>toast(ok?"🗑️ Producto eliminado":"No se pudo eliminar, intenta de nuevo"))}
+ mutar(d=>{if(!d.productos[i]||d.productos[i].nombre!==nom)return false;d.productos.splice(i,1)},ok=>{if(ok&&p.imgId){if(db2)db2.child(p.imgId).remove();delete IMGS[p.imgId]}toast(ok?"🗑️ Producto eliminado":"No se pudo eliminar, intenta de nuevo")})}
+function setPrecio(i){const v=parseFloat($("pp"+i).value);if(isNaN(v)||v<0){toast("Escribe un precio válido");return}mutar(d=>{d.productos[i].precio=v},()=>toast("💲 Precio actualizado"))}
+function procesarImg(file,cb){
+ if(!file.type||!file.type.startsWith("image/")){toast("Solo se aceptan imágenes (JPG, PNG, etc.)");return}
+ const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const M=500,k=Math.min(1,M/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+  const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);cb(c.toDataURL("image/jpeg",.75))};
+  im.onerror=()=>toast("No se pudo leer la imagen");im.src=r.result};r.readAsDataURL(file)}
+function guardarImagen(id,data,old){IMGS[id]=data;
+ if(db2){db2.child(id).set(data).catch(e=>alert("No se pudo guardar la imagen. Revisa las reglas de Firebase: "+e.message));if(old)db2.child(old).remove()}
+ else{if(old)delete IMGS[old];try{localStorage.setItem(KEY+"_img",JSON.stringify(IMGS))}catch(e){}}}
+function subirImg(i){const f=document.createElement("input");f.type="file";f.accept="image/*";
+ f.onchange=()=>{const fl=f.files[0];if(!fl)return;procesarImg(fl,data=>{const id="i"+Date.now(),old=datos.productos[i]&&datos.productos[i].imgId;guardarImagen(id,data,old);mutar(d=>{d.productos[i].imgId=id;d.productos[i].img=""},()=>toast("🖼️ Imagen actualizada"))})};f.click()}
+function quitarImg(i){const old=datos.productos[i]&&datos.productos[i].imgId;if(old){if(db2)db2.child(old).remove();delete IMGS[old]}mutar(d=>{d.productos[i].imgId="";d.productos[i].img=""},()=>toast("Imagen quitada"))}
+function elegirImgNuevo(inp){const f=inp.files[0];if(!f)return;procesarImg(f,data=>{npImg=data;$("npimgok").textContent="✅ "+f.name});inp.value=""}
 function setImg(i){const v=$("im"+i).value.trim();mutar(d=>{d.productos[i].img=v},()=>toast("🖼️ Imagen actualizada"))}
 
 /* ---- Proveedor ---- */
