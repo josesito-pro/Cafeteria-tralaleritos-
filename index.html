@@ -56,27 +56,39 @@ td{padding:10px;border-bottom:1px solid #f3e8d3}tr:nth-child(even) td{background
 @keyframes pop{from{transform:scale(.8);opacity:0}}
 .tk-c{text-align:center;line-height:1.5}.tk-r{display:flex;justify-content:space-between;gap:8px;margin:4px 0}
 .tkbox hr{border:0;border-top:2px dashed #999;margin:12px 0}
+.hlogo{height:40px;width:40px;object-fit:contain;background:#fff;border-radius:50%;padding:2px;vertical-align:middle;margin-right:6px}
+.logos{display:flex;justify-content:center;gap:22px;align-items:center}
+.logos img{width:125px;height:125px;object-fit:contain;background:#fff;border-radius:50%;padding:8px;box-shadow:0 8px 22px #06566a33;animation:bob 2.6s ease-in-out infinite}.logos img+img{animation-delay:.6s}
+.choose{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;max-width:640px;margin:22px auto}
+.choose button{padding:34px 10px;font-size:1.45rem;border-radius:24px;line-height:1.3}.choose button small{display:block;font-size:.9rem;font-weight:500;opacity:.95}
+.pimg{width:100%;height:170px;object-fit:cover;display:block}.pic.hasimg{padding:0;font-size:0}
+.tklogo{height:60px;width:60px;object-fit:contain;margin:0 6px}
 </style></head><body>
-<header><h1>🦈 LOS <span>TRALALERITOS</span> DEL 22 👟</h1>
+<header><h1><img class="hlogo" src="logo-escuela.png" alt="" onerror="this.style.display='none'"><img class="hlogo" src="logo-cafeteria.png" alt="" onerror="this.style.display='none'">LOS <span>TRALALERITOS</span> DEL 22</h1>
 <div id="userbox" class="hidden"><span id="uname"></span> &nbsp;<button class="sec" onclick="salir()">Salir</button></div></header>
 
 <div id="login" class="wrap">
- <div class="hero"><div class="big">🦈</div><h2>¡Bienvenido a Los Tralaleritos del 22!</h2><p class="muted">Tortas, hot dogs y bebidas con sabor a tiburón 👟👟👟</p></div>
- <div class="card login"><h2>🔐 Administrador</h2>
-  <input id="usr" placeholder="Usuario"><input id="pwd" type="password" placeholder="Contraseña">
-  <button style="width:100%;margin-bottom:8px" onclick="entrar()">Entrar</button>
-  <hr style="border:0;border-top:2px dashed #ddd;margin:16px 0"><h2 style="margin-bottom:8px">🎓 Soy estudiante</h2>
+ <div class="hero"><div class="logos"><img src="logo-escuela.png" alt="Institución" onerror="this.style.display='none'"><img src="logo-cafeteria.png" alt="Cafetería" onerror="this.style.display='none'"></div>
+  <h2>¡Bienvenido a Los Tralaleritos del 22!</h2><p class="muted">Cafetería institucional · Tortas, hot dogs y bebidas</p></div>
+ <div id="elegir" class="choose"><button class="alt" onclick="elegir('est')">🎓 Soy estudiante<small>Compra con tu correo institucional</small></button>
+  <button onclick="elegir('adm')">🛠️ Soy administrador<small>Inventario, ventas y reportes</small></button></div>
+ <div id="f-est" class="card login hidden"><h2>🎓 Estudiante</h2>
   <input id="ecorreo" type="email" placeholder="Correo institucional">
   <button class="alt" style="width:100%;margin-bottom:8px" onclick="entrarEstudiante()">Continuar con mi correo</button>
   <div id="ereg" class="hidden"><p class="muted">Primera vez: completa tus datos</p>
-   <input id="enom" placeholder="Nombre completo"><input id="ematr" placeholder="Matrícula (opcional)">
-   <input id="esem" placeholder="Semestre (ej. 3)"><input id="egru" placeholder="Grupo (ej. B)">
+   <input id="enom" placeholder="Nombre completo"><input id="ematr" placeholder="Matrícula (opcional)"><input id="esem" placeholder="Semestre (ej. 3)"><input id="egru" placeholder="Grupo (ej. B)">
    <button style="width:100%" onclick="registrarEstudiante()">Guardar y entrar</button></div>
-  <button class="gray" style="width:100%;margin-top:8px" onclick="entrarCliente()">🙋 Entrar sin cuenta</button><div id="lmsg" class="msg bad"></div></div>
+  <button class="gray" style="width:100%;margin-top:8px" onclick="entrarCliente()">🙋 Entrar sin cuenta</button>
+  <button class="sec" style="width:100%;margin-top:8px;background:#e6eef0;color:#06566a" onclick="volver()">← Volver</button></div>
+ <div id="f-adm" class="card login hidden"><h2>🔐 Administrador</h2>
+  <input id="usr" placeholder="Usuario"><input id="pwd" type="password" placeholder="Contraseña">
+  <button style="width:100%;margin-bottom:8px" onclick="entrar()">Entrar</button><div id="lmsg" class="msg bad"></div>
+  <button class="sec" style="width:100%;margin-top:8px;background:#e6eef0;color:#06566a" onclick="volver()">← Volver</button></div>
 </div>
 
 <div id="cliente" class="wrap hidden">
  <div id="promobox"></div>
+ <div class="tabs"><button id="c-comida" class="on" onclick="setCat('comida')">🍔 Comidas</button><button id="c-bebida" onclick="setCat('bebida')">🥤 Bebidas</button></div>
  <h2>🍽️ Productos disponibles</h2><div id="catalogo" class="grid"></div>
  <div class="card" style="margin-top:18px"><h2>🛒 Tu pedido</h2><div id="carrito"></div>
   <div class="total">Total a pagar: $<span id="total">0</span></div>
@@ -86,13 +98,19 @@ td{padding:10px;border-bottom:1px solid #f3e8d3}tr:nth-child(even) td{background
 
 <div id="admin" class="wrap hidden">
  <div class="stats"><div class="stat">📦 Piezas en inventario<b id="s1">0</b></div><div class="stat">💰 Vendido hoy<b id="s2">$0</b></div><div class="stat">🧾 Ventas hoy<b id="s3">0</b></div></div>
- <div class="tabs"><button id="t-inv" class="on" onclick="tab('inv')">📦 Inventario</button><button id="t-promo" onclick="tab('promo')">🔥 Promociones</button><button id="t-nuevo" onclick="tab('nuevo')">➕ Agregar producto</button><button id="t-ventas" onclick="tab('ventas')">🧾 Ventas</button></div>
- <div id="p-inv" class="card"><h2>📦 Inventario</h2><table><thead><tr><th>Producto</th><th>Precio</th><th>Inventario</th><th>Agregar inventario</th></tr></thead><tbody id="tinv"></tbody></table></div>
+ <div class="tabs"><button id="t-inv" class="on" onclick="tab('inv')">📦 Inventario</button><button id="t-promo" onclick="tab('promo')">🔥 Promociones</button><button id="t-nuevo" onclick="tab('nuevo')">➕ Agregar producto</button><button id="t-ventas" onclick="tab('ventas')">🧾 Ventas</button><button id="t-prov" onclick="tab('prov')">🚚 Proveedor</button></div>
+ <div id="p-inv" class="card"><h2>📦 Inventario</h2><table><thead><tr><th>Producto</th><th>Precio</th><th>Inventario</th><th>Agregar inventario</th><th>Imagen</th></tr></thead><tbody id="tinv"></tbody></table></div>
  <div id="p-promo" class="card hidden"><h2>🔥 Promociones</h2><p class="muted">Elige el descuento (%) para cada producto. Los clientes lo verán al instante.</p>
   <table><thead><tr><th>Producto</th><th>Precio</th><th>Promoción</th><th>Descuento %</th><th></th></tr></thead><tbody id="tpromo"></tbody></table></div>
  <div id="p-nuevo" class="card hidden"><h2>➕ Agregar producto</h2>
-  <div class="row"><input id="np" placeholder="Nombre del producto"><input id="npr" type="number" min="0" placeholder="Precio"><input id="nps" type="number" min="0" placeholder="Cantidad inicial"><button onclick="nuevoProducto()">Agregar</button></div><div id="amsg" class="msg"></div></div>
+  <div class="row"><input id="np" placeholder="Nombre del producto"><input id="npr" type="number" min="0" placeholder="Precio"><input id="nps" type="number" min="0" placeholder="Cantidad inicial"><select id="npcat"><option value="comida">🍔 Comida</option><option value="bebida">🥤 Bebida</option></select><input id="npimg" placeholder="Imagen (archivo o URL, opcional)"><button onclick="nuevoProducto()">Agregar</button></div><div id="amsg" class="msg"></div></div>
  <div id="p-ventas" class="card hidden"><h2>🧾 Registro de ventas</h2><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Detalle</th><th>Total</th><th>Recibido</th><th>Cambio</th></tr></thead><tbody id="tventas"></tbody></table></div>
+ <div id="p-prov" class="card hidden"><h2>🚚 Proveedor</h2>
+  <p class="muted">Solicita producto a tu proveedor por correo (el correo del proveedor no es institucional).</p>
+  <div class="row"><select id="pvprod" onchange="prevProv()"></select><input id="pvnuevo" oninput="prevProv()" placeholder="o escribe un producto nuevo"><input id="pvcant" type="number" min="1" oninput="prevProv()" placeholder="Cantidad a solicitar"></div>
+  <div class="row" style="margin-top:8px"><input id="pvmail" type="email" placeholder="Correo del proveedor"><button onclick="enviarProveedor()">📨 Enviar solicitud</button></div>
+  <div id="pvprev" class="msg"></div><div id="pvmsg" class="msg"></div>
+  <h3>Solicitudes enviadas</h3><table><thead><tr><th>Fecha</th><th>Producto</th><th>Cantidad</th><th>Proveedor</th><th>Solicitó</th></tr></thead><tbody id="tsol"></tbody></table></div>
  <button id="reporte" onclick="reporte()">📄 Reporte del día</button>
 </div>
 <div id="ticketmodal" class="hidden"><div class="tkbox"><div id="ticketbody"></div><div class="row" style="margin-top:14px"><button onclick="ticketPDF()">📄 Descargar PDF</button><button class="gray" onclick="cerrarTicket()">Cerrar</button></div></div></div>
@@ -100,10 +118,12 @@ td{padding:10px;border-bottom:1px solid #f3e8d3}tr:nth-child(even) td{background
 <div id="estado" style="position:fixed;left:12px;bottom:12px;background:#fff;border-radius:20px;padding:4px 12px;font-weight:700;font-size:.8rem;box-shadow:0 2px 8px #0003;z-index:9"></div>
 
 <script>
-const NOMBRE_CAFE="LOS TRALALERITOS DEL 22", USUARIOS={"JOSE":"1234","ALBERTO":"4321"}, KEY="tralaleritos_data_v1";
+const NOMBRE_INSTITUCION="NOMBRE DE TU INSTITUCIÓN",LOGO_ESCUELA="logo-escuela.png",LOGO_CAFE="logo-cafeteria.png",NOMBRE_CAFE="LOS TRALALERITOS DEL 22", USUARIOS={"JOSE":"1234","ALBERTO":"4321"}, KEY="tralaleritos_data_v1";
 let datos,sesion=null,carrito={};
+/* EmailJS: para enviar correos al proveedor (ver instrucciones). Si queda vacio se abre tu app de correo. */
+const EMAILJS={serviceId:"",templateId:"",publicKey:""};
 /* Dominio del correo institucional (ej. "@miescuela.edu.mx"). Si lo dejas vacio, acepta cualquier correo. */
-const DOMINIO_INSTITUCIONAL="@cetis22.edu.mx";
+const DOMINIO_INSTITUCIONAL="";
 /* ====== BASE DE DATOS EN LINEA (Firebase) ======
    Pega aqui los datos de tu proyecto. Si databaseURL queda vacio, la pagina funciona en modo local. */
 const FIREBASE_CONFIG={
@@ -115,7 +135,7 @@ const FIREBASE_CONFIG={
 };
 const INICIAL=()=>({productos:[{nombre:"TORTA DE JAMÓN",precio:32,stock:30},{nombre:"HOT DOG",precio:28,stock:15},{nombre:"AGUA NATURAL",precio:20,stock:25}],ventas:[]});
 let db=null;
-function norm(v){if(!v||typeof v!=="object")v=INICIAL();v.productos=Object.values(v.productos||{});v.ventas=Object.values(v.ventas||{});v.estudiantes=v.estudiantes||{};return v}
+function norm(v){if(!v||typeof v!=="object")v=INICIAL();v.productos=Object.values(v.productos||{});v.ventas=Object.values(v.ventas||{});v.estudiantes=v.estudiantes||{};v.solicitudes=Object.values(v.solicitudes||{});return v}
 function cargar(){
  datos=norm(null);
  if(FIREBASE_CONFIG.databaseURL){
@@ -158,14 +178,20 @@ function registrarEstudiante(){const c=$("ecorreo").value.trim().toLowerCase(),n
  if(!n||!sm||!g){toast("Completa nombre, semestre y grupo");return}
  let fin={correo:c,nombre:n,semestre:sm,grupo:g,matricula:mt};
  mutar(d=>{if(d.estudiantes[ekey(c)])fin=d.estudiantes[ekey(c)];else d.estudiantes[ekey(c)]=fin},ok=>{if(ok){alumno=fin;iniciarCliente("🎓 "+fin.nombre)}else toast("No se pudo guardar, intenta de nuevo")})}
-function salir(){sesion=null;alumno=null;$("ereg").classList.add("hidden");$("ecorreo").value="";carrito={};$("usr").value=$("pwd").value="";mostrar("login")}
-document.addEventListener("keydown",e=>{if(e.key==="Enter"&&!$("login").classList.contains("hidden"))entrar()});
+function salir(){volver();sesion=null;alumno=null;$("ereg").classList.add("hidden");$("ecorreo").value="";carrito={};$("usr").value=$("pwd").value="";mostrar("login")}
+document.addEventListener("keydown",e=>{if(e.key!=="Enter")return;if(!$("f-adm").classList.contains("hidden")&&!$("login").classList.contains("hidden"))entrar();else if(!$("f-est").classList.contains("hidden")&&!$("login").classList.contains("hidden"))entrarEstudiante()});
+function elegir(t){$("elegir").classList.add("hidden");$("f-est").classList.toggle("hidden",t!=="est");$("f-adm").classList.toggle("hidden",t!=="adm")}
+function volver(){["f-est","f-adm"].forEach(x=>$(x).classList.add("hidden"));$("elegir").classList.remove("hidden");$("ereg").classList.add("hidden")}
+let catActual="comida";
+function categoria(p){if(p.cat)return p.cat;return /AGUA|REFRESCO|JUGO|CAF|T[EÉ]\b|LICUADO|SODA|COCA|LIMONADA|BEBIDA|LECHE|MALTEADA/i.test(p.nombre)?"bebida":"comida"}
+function setCat(c){catActual=c;$("c-comida").classList.toggle("on",c==="comida");$("c-bebida").classList.toggle("on",c==="bebida");pintarCliente()}
+function picHTML(p){const e=emoji(p.nombre);return p.img?`<div class="pic hasimg"><img class="pimg" src="${p.img}" alt="${p.nombre}" onerror="this.parentNode.classList.remove('hasimg');this.replaceWith(document.createTextNode('${e}'))"></div>`:`<div class="pic">${e}</div>`}
 
 function pintarCliente(){
  const pro=datos.productos.filter(p=>p.promo>0);
  $("promobox").innerHTML=pro.length?`<div class="card promos"><h2>🔥 ¡PROMOCIONES DEL DÍA! 🔥</h2>${pro.map(p=>`<span class="pchip">${emoji(p.nombre)} ${p.nombre} <span class="bad">-${p.promo}%</span> → $${pr(p)}</span>`).join("")}</div>`:"";
- $("catalogo").innerHTML=datos.productos.map((p,i)=>{const q=carrito[i]||0,disp=p.stock-q;
-  return`<div class="card prod">${p.promo>0?`<div class="ribbon">🔥 -${p.promo}%</div>`:""}<div class="pic">${emoji(p.nombre)}</div><div class="body"><h3>${p.nombre}</h3>
+ $("catalogo").innerHTML=datos.productos.map((p,i)=>{if(categoria(p)!==catActual)return"";const q=carrito[i]||0,disp=p.stock-q;
+  return`<div class="card prod">${p.promo>0?`<div class="ribbon">🔥 -${p.promo}%</div>`:""}${picHTML(p)}<div class="body"><h3>${p.nombre}</h3>
   <div class="price">${p.promo>0?`<span class="old">$${p.precio}</span>`:""}$${pr(p)}</div><div class="muted">Inventario: ${disp}</div>
   <div class="qty"><button class="alt" onclick="quitar(${i})">−</button><b>${q}</b><button onclick="agregar(${i})" ${disp<=0?"disabled":""}>+</button></div>
   ${disp<=0?"<div class='msg bad'>Límite de inventario alcanzado</div>":""}</div></div>`}).join("");
@@ -188,20 +214,20 @@ function pagar(){const total=totalCarrito(),rec=parseFloat($("recibido").value),
   const cambio=Math.round((rec-tot)*100)/100;carrito={};$("recibido").value="";
   m.className="msg ok";m.textContent=cambio>0?`¡Gracias! Tu sobrante es: $${cambio.toFixed(2)} 🎉`:"¡Gracias! Pago exacto 🎉";pintarCliente();mostrarTicket(venta)})}
 
-function tab(t){["inv","promo","nuevo","ventas"].forEach(x=>{$("p-"+x).classList.toggle("hidden",x!==t);$("t-"+x).classList.toggle("on",x===t)});pintarAdmin()}
+function tab(t){["inv","promo","nuevo","ventas","prov"].forEach(x=>{$("p-"+x).classList.toggle("hidden",x!==t);$("t-"+x).classList.toggle("on",x===t)});pintarAdmin()}
 function pintarAdmin(){
- $("tinv").innerHTML=datos.productos.map((p,i)=>`<tr><td>${emoji(p.nombre)} ${p.nombre}</td><td>$${p.precio}</td><td><b>${p.stock}</b></td><td><div class="row"><input class="small" id="add${i}" type="number" min="1" placeholder="Cant."><button class="alt" onclick="sumarStock(${i})">Agregar</button></div></td></tr>`).join("");
+ $("tinv").innerHTML=datos.productos.map((p,i)=>`<tr><td>${emoji(p.nombre)} ${p.nombre}</td><td>$${p.precio}</td><td><b>${p.stock}</b></td><td><div class="row"><input class="small" id="add${i}" type="number" min="1" placeholder="Cant."><button class="alt" onclick="sumarStock(${i})">Agregar</button></div></td><td><div class="row"><input id="im${i}" value="${p.img||""}" placeholder="archivo o URL"><button class="alt" onclick="setImg(${i})">🖼️</button></div></td></tr>`).join("");
  $("tpromo").innerHTML=datos.productos.map((p,i)=>`<tr><td>${emoji(p.nombre)} ${p.nombre}</td><td>$${p.precio}</td><td>${p.promo>0?`<b class="bad">🔥 -${p.promo}% → $${pr(p)}</b>`:"<span class='muted'>Sin promoción</span>"}</td>
   <td><input class="small" id="pm${i}" type="number" min="1" max="90" placeholder="%" value="${p.promo||""}"></td><td><div class="row"><button onclick="setPromo(${i})">Aplicar</button><button class="gray" onclick="quitarPromo(${i})">Quitar</button></div></td></tr>`).join("");
  $("tventas").innerHTML=datos.ventas.length?datos.ventas.slice().reverse().map(v=>`<tr><td>${new Date(v.fecha).toLocaleString("es-MX")}${v.folio?"<br><span class='muted'>#"+v.folio+"</span>":""}</td><td>${v.estudiante?"🎓 <b>"+v.estudiante.nombre+"</b><br><span class='muted'>Sem. "+v.estudiante.semestre+" · Grupo "+v.estudiante.grupo+(v.estudiante.matricula?"<br>Mat. "+v.estudiante.matricula:"")+"<br>"+v.estudiante.correo+"</span>":"<span class='muted'>🙋 Cliente general</span>"}</td><td>${v.items.map(x=>x.cant+" x "+x.nombre).join(", ")}</td><td>$${v.total}</td><td>$${v.recibido}</td><td>$${v.cambio.toFixed(2)}</td></tr>`).join(""):"<tr><td colspan='6' class='muted'>Sin ventas registradas.</td></tr>";
- statsAdmin()}
+ pintarProv();statsAdmin()}
 function statsAdmin(){const a=analisis();$("s1").textContent=datos.productos.reduce((s,p)=>s+p.stock,0);$("s2").textContent="$"+a.totalDia;$("s3").textContent=a.n}
 function sumarStock(i){const n=parseInt($("add"+i).value);if(n>0)mutar(d=>{d.productos[i].stock+=n},()=>toast("📦 Inventario actualizado"))}
 function setPromo(i){const n=parseFloat($("pm"+i).value);if(!(n>0&&n<=90)){toast("Escribe un descuento entre 1 y 90");return}mutar(d=>{d.productos[i].promo=n},()=>toast("🔥 Promoción aplicada"))}
 function quitarPromo(i){mutar(d=>{d.productos[i].promo=0},()=>toast("Promoción quitada"))}
 function nuevoProducto(){const n=$("np").value.trim().toUpperCase(),p=parseFloat($("npr").value),s=parseInt($("nps").value),m=$("amsg");
  if(!n||isNaN(p)||p<0||isNaN(s)||s<0){m.className="msg bad";m.textContent="Completa nombre, precio y cantidad inicial.";return}
- mutar(d=>{d.productos.push({nombre:n,precio:p,stock:s})},()=>{$("np").value=$("npr").value=$("nps").value="";m.className="msg ok";m.textContent="¡Producto agregado!"})}
+ mutar(d=>{d.productos.push({nombre:n,precio:p,stock:s,cat:$("npcat").value,img:$("npimg").value.trim()})},()=>{$("np").value=$("npr").value=$("nps").value=$("npimg").value="";m.className="msg ok";m.textContent="¡Producto agregado!"})}
 
 function analisis(){const hoy=new Date().toDateString(),vh=datos.ventas.filter(v=>new Date(v.fecha).toDateString()===hoy),mapa={};
  datos.productos.forEach(p=>mapa[p.nombre]={cant:0,monto:0,p});
@@ -219,51 +245,100 @@ function recomendaciones(a){const r=[];
  return r}
 
 const _ei={};function eimg(e){if(_ei[e])return _ei[e];const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d");x.font="96px 'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(e,64,70);return _ei[e]=c.toDataURL("image/png")}
+const LOGOS={escuela:null,cafe:null};
+function cargarLogo(src,k){const im=new Image();im.onload=()=>{try{const c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d"),r=Math.min(256/im.width,256/im.height),w=im.width*r,h=im.height*r;x.drawImage(im,(256-w)/2,(256-h)/2,w,h);LOGOS[k]=c.toDataURL("image/png")}catch(e){}};im.src=src}
+function setImg(i){const v=$("im"+i).value.trim();mutar(d=>{d.productos[i].img=v},()=>toast("🖼️ Imagen actualizada"))}
+
+/* ---- Proveedor ---- */
+function pintarProv(){const sel=$("pvprod"),cur=sel.value;sel.innerHTML=datos.productos.map(p=>`<option>${p.nombre}</option>`).join("");if(cur)sel.value=cur;
+ $("tsol").innerHTML=datos.solicitudes.length?datos.solicitudes.slice().reverse().map(x=>`<tr><td>${new Date(x.fecha).toLocaleString("es-MX")}</td><td>${x.producto}</td><td>${x.cantidad}</td><td>${x.correo}</td><td>${x.solicitante||""}</td></tr>`).join(""):"<tr><td colspan='5' class='muted'>Aún no hay solicitudes.</td></tr>"}
+function prevProv(){const n=$("pvnuevo").value.trim()||$("pvprod").value,c=$("pvcant").value;$("pvprev").innerHTML=n&&c>0?`📣 <b>Proveedor:</b> se solicitarán <b>${c}</b> unidades de <b>${n}</b>.`:""}
+function correoHTML(prod,cant,fecha,quien){const u=f=>new URL(f,location.href).href;
+ return `<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:20px 0;font-family:Arial,Helvetica,sans-serif"><tr><td align="center">
+ <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #d9d2c3;max-width:600px">
+ <tr><td style="padding:18px 22px;border-bottom:3px solid #06566a"><table width="100%"><tr>
+  <td width="90" align="left"><img src="${u(LOGO_ESCUELA)}" width="80" height="80" alt="Institución" style="display:block"></td>
+  <td align="center" style="color:#06566a"><div style="font-size:13px;font-weight:bold">${NOMBRE_INSTITUCION}</div><div style="font-size:19px;font-weight:bold;margin-top:4px">${NOMBRE_CAFE}</div><div style="font-size:12px;color:#666">Cafetería institucional</div></td>
+  <td width="90" align="right"><img src="${u(LOGO_CAFE)}" width="80" height="80" alt="Cafetería" style="display:block"></td></tr></table></td></tr>
+ <tr><td style="padding:26px 30px;color:#222;font-size:15px;line-height:1.6">
+  <h2 style="margin:0 0 16px;color:#06566a;font-size:20px">Solicitud de Proveeduría</h2>
+  <p style="margin:0 0 12px">Estimado proveedor:</p>
+  <p style="margin:0 0 16px">Por medio del presente, la cafetería <b>${NOMBRE_CAFE}</b> le solicita atentamente que acuda a la institución a <b>surtir el siguiente producto lo más pronto posible</b>:</p>
+  <table width="100%" cellpadding="10" cellspacing="0" style="border:1px solid #d9d2c3;border-collapse:collapse;margin-bottom:18px">
+   <tr style="background:#f1ece0"><th align="left" style="border:1px solid #d9d2c3">Producto</th><th align="center" style="border:1px solid #d9d2c3">Cantidad solicitada</th></tr>
+   <tr><td style="border:1px solid #d9d2c3"><b>${prod}</b></td><td align="center" style="border:1px solid #d9d2c3"><b>${cant} piezas</b></td></tr></table>
+  <p style="margin:0 0 6px;font-size:13px;color:#555">Fecha de solicitud: ${fecha}<br>Solicitante: ${quien}</p>
+  <p style="margin:16px 0 6px">Agradecemos de antemano su pronta atención.</p>
+  <p style="margin:18px 0 0">Atentamente,<br><b>Cafetería ${NOMBRE_CAFE}</b><br>${NOMBRE_INSTITUCION}</p></td></tr>
+ <tr><td align="center" style="background:#06566a;color:#fff;font-size:11px;padding:10px">Mensaje generado desde el sistema de la cafetería</td></tr></table></td></tr></table>`}
+async function enviarProveedor(){
+ const prod=($("pvnuevo").value.trim()||$("pvprod").value).toUpperCase(),cant=parseInt($("pvcant").value),mail=$("pvmail").value.trim(),m=$("pvmsg");
+ if(!prod||!(cant>0)||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)){m.className="msg bad";m.textContent="Elige el producto, escribe la cantidad y un correo válido del proveedor.";return}
+ const asunto="Solicitud de Proveeduría en la cafetería Tralaleritos",fecha=new Date().toLocaleString("es-MX");
+ if(!(EMAILJS.serviceId&&EMAILJS.templateId&&EMAILJS.publicKey)){
+  location.href="mailto:"+mail+"?subject="+encodeURIComponent(asunto)+"&body="+encodeURIComponent("Estimado proveedor:\n\nLa cafetería "+NOMBRE_CAFE+" le solicita acudir a la institución a surtir lo más pronto posible:\n\nProducto: "+prod+"\nCantidad: "+cant+" piezas\n\nAtentamente,\nCafetería "+NOMBRE_CAFE);
+  m.className="msg bad";m.textContent="EmailJS no está configurado: se abrió tu app de correo con un mensaje sencillo (sin logos).";return}
+ m.className="msg";m.textContent="Enviando...";let ok=false;
+ try{const r=await fetch("https://api.emailjs.com/api/v1.0/email/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({service_id:EMAILJS.serviceId,template_id:EMAILJS.templateId,user_id:EMAILJS.publicKey,template_params:{to_email:mail,subject:asunto,html_body:correoHTML(prod,cant,fecha,sesion)}})});
+  ok=r.ok;if(!ok){m.className="msg bad";m.textContent="Error al enviar: "+await r.text();return}}catch(e){m.className="msg bad";m.textContent="Error de conexión al enviar.";return}
+ mutar(d=>{d.solicitudes.push({fecha:new Date().toISOString(),producto:prod,cantidad:cant,correo:mail,solicitante:sesion})},()=>{m.className="msg ok";m.textContent="✅ Solicitud enviada a "+mail;$("pvcant").value=$("pvnuevo").value="";prevProv()})}
+
 function reporte(){
  if(!window.jspdf){alert("No se pudo cargar la librería de PDF. Verifica tu conexión a internet.");return}
- const a=analisis(),{jsPDF}=window.jspdf,d=new jsPDF(),fecha=new Date().toLocaleDateString("es-MX");let y=22;
- const ck=n=>{if(y+n>282){d.addPage();y=20}};
- const icon=(e,x,yy,s=7)=>d.addImage(eimg(e),"PNG",x,yy,s,s);
- const titulo=(e,t)=>{ck(20);y+=5;icon(e,15,y-6,9);d.setFont("helvetica","bold");d.setFontSize(15);d.setTextColor(6,86,106);d.text(t,27,y);d.setTextColor(20,50,59);y+=10};
- // texto con **negritas**
- const rico=(t,x0,e)=>{ck(8);if(e){icon(e,x0,y-5,6.5);x0+=9}let x=x0;d.setFontSize(11);
-  t.split("**").forEach((seg,i)=>{d.setFont("helvetica",i%2?"bold":"normal");seg.split(/(\s+)/).forEach(w=>{if(!w)return;const wd=d.getTextWidth(w);if(x+wd>195&&w.trim()){x=x0;y+=6}d.text(w,x,y);x+=wd})});y+=8};
- icon("🦈",15,10,16);icon("🦈",179,10,16);
- d.setFont("helvetica","bold");d.setFontSize(23);d.setTextColor(6,86,106);d.text(NOMBRE_CAFE,105,19,{align:"center"});
- d.setFontSize(14);d.setTextColor(255,93,93);d.text("REPORTE DEL DIA  -  "+fecha,105,28,{align:"center"});
- d.setTextColor(20,50,59);icon("🥪",70,31,8);icon("🌭",101,31,8);icon("💧",132,31,8);y=48;
-
- titulo("💰","TOTAL VENDIDO DEL DIA");
- rico("Ventas realizadas: **"+a.n+"**",18,"🧾");rico("Total vendido: **$"+a.totalDia+"**",18,"💵");
- a.vendidos.forEach(x=>rico(x.n+": **"+x.cant+" pzas** ($"+x.monto.toFixed(2)+")",24,emoji(x.n)));
-
+ const a=analisis(),{jsPDF}=window.jspdf,d=new jsPDF(),ahora=new Date(),L=18,R=192;let y=0;
+ const fecha=ahora.toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
+ const ck=n=>{if(y+n>272){d.addPage();y=22}};
+ const icon=(e,x,yy,sz=6)=>d.addImage(eimg(e),"PNG",x,yy,sz,sz);
+ const lg=(k,x,yy,sz)=>{if(LOGOS[k])d.addImage(LOGOS[k],"PNG",x,yy,sz,sz);else icon(k==="cafe"?"🦈":"🏫",x,yy,sz)};
+ const sec=(n,e,t)=>{ck(22);y+=4;icon(e,L,y-5.5,7);d.setFont("times","bold");d.setFontSize(13);d.setTextColor(20);d.text(n+". "+t.toUpperCase(),L+10,y);d.setDrawColor(150);d.setLineWidth(.2);d.line(L,y+2.5,R,y+2.5);y+=10};
+ const txt=(t,x0=L)=>{ck(8);let x=x0;d.setFontSize(11);t.split("**").forEach((seg,i)=>{d.setFont("times",i%2?"bold":"normal");seg.split(/(\s+)/).forEach(w=>{if(!w)return;const wd=d.getTextWidth(w);if(x+wd>R&&w.trim()){x=x0;y+=6}d.text(w,x,y);x+=wd})});y+=7};
+ const tabla=(cols,an,filas,negr)=>{const h=7;ck(h*(filas.length+1)+4);let x=L;d.setDrawColor(90);d.setLineWidth(.25);d.setFillColor(232);d.setFont("times","bold");d.setFontSize(10.5);
+  cols.forEach((c,i)=>{d.rect(x,y,an[i],h,"FD");d.text(c,i?x+an[i]-2:x+2,y+4.8,{align:i?"right":"left"});x+=an[i]});y+=h;
+  filas.forEach((f,k)=>{x=L;d.setFont("times",negr&&k===filas.length-1?"bold":"normal");f.forEach((c,i)=>{d.rect(x,y,an[i],h);d.text(String(c),i?x+an[i]-2:x+2,y+4.8,{align:i?"right":"left"});x+=an[i]});y+=h});y+=5};
+ // Encabezado institucional
+ lg("escuela",L,9,27);lg("cafe",R-27,9,27);d.setTextColor(20);
+ d.setFont("times","bold");d.setFontSize(13);d.text(NOMBRE_INSTITUCION.toUpperCase(),105,17,{align:"center"});
+ d.setFontSize(19);d.text(NOMBRE_CAFE,105,27,{align:"center"});
+ d.setFont("times","italic");d.setFontSize(11);d.text("Cafetería institucional",105,33,{align:"center"});
+ d.setDrawColor(40);d.setLineWidth(.7);d.line(L,40,R,40);d.setLineWidth(.2);d.line(L,41.6,R,41.6);
+ d.setFont("times","bold");d.setFontSize(15);d.text("REPORTE DIARIO DE OPERACIONES",105,52,{align:"center"});
+ d.setFont("times","normal");d.setFontSize(11);d.text("Fecha del reporte: "+fecha,L,62);d.text("Elaborado por: "+sesion,R,62,{align:"right"});d.text("Hora de emisión: "+ahora.toLocaleTimeString("es-MX"),L,68);
+ y=76;
+ // 1
+ sec(1,"💰","Resumen de ventas del día");
+ txt("Ventas realizadas: **"+a.n+"**        Total vendido: **$"+a.totalDia.toFixed(2)+"**");y+=1;
+ if(a.vendidos.length)tabla(["Producto","Cantidad","Importe"],[100,34,40],a.vendidos.map(x=>[x.n,x.cant+" pzas","$"+x.monto.toFixed(2)]).concat([["TOTAL",a.vendidos.reduce((s,x)=>s+x.cant,0)+" pzas","$"+a.totalDia.toFixed(2)]]),true);else txt("No se registraron ventas.");
+ // 2
  const tot=datos.productos.reduce((s,p)=>s+p.stock,0),val=datos.productos.reduce((s,p)=>s+p.stock*p.precio,0);
- titulo("📦","TOTAL DE INVENTARIO DISPONIBLE");
- rico("Piezas disponibles: **"+tot+"**   (valor aprox. **$"+val+"**)",18,"🗃️");
- datos.productos.forEach(p=>rico(p.nombre+": **"+p.stock+" pzas**",24,emoji(p.nombre)));
-
- const pro=datos.productos.filter(p=>p.promo>0);
- if(pro.length){titulo("🔥","PROMOCIONES ACTIVAS");pro.forEach(p=>rico("**"+p.nombre+"**: -"+p.promo+"% (de $"+p.precio+" a **$"+pr(p)+"**)",18,emoji(p.nombre)))}
-
- titulo("🥇","PRODUCTO MAS VENDIDO");
- rico(a.top?"**"+a.top.n+"**: se vendieron **"+a.top.cant+" piezas** por un total de **$"+a.top.monto.toFixed(2)+"**.":"Sin ventas hoy.",18,a.top?emoji(a.top.n):"😴");
- titulo("🐌","PRODUCTO MENOS VENDIDO");
- rico(a.low&&a.n?"**"+a.low.n+"**: solo se vendieron **"+a.low.cant+" piezas**.":"Sin datos suficientes.",18,a.low&&a.n?emoji(a.low.n):"😴");
- titulo("💡","RECOMENDACIONES SEGUN LAS TENDENCIAS");
- recomendaciones(a).forEach(([e,t])=>rico(t,18,e));
- ck(20);y+=6;d.setFont("helvetica","bold");d.setFontSize(12);d.setTextColor(6,86,106);d.text("Gracias por preferirnos, tiburones del 22!",105,y,{align:"center"});icon("🦈",50,y-6,8);icon("👟",152,y-6,8);
- d.setProperties({title:NOMBRE_CAFE+" - Reporte del dia"});
- if(!window.open(d.output("bloburl"),"_blank"))d.save("Reporte_Tralaleritos.pdf")}
+ sec(2,"📦","Inventario disponible");
+ tabla(["Producto","Precio","Existencias"],[100,34,40],datos.productos.map(p=>[p.nombre,"$"+p.precio,p.stock+" pzas"]).concat([["TOTAL DE INVENTARIO","$"+val.toFixed(2)+" aprox.",tot+" pzas"]]),true);
+ // 3 y 4
+ sec(3,"🥇","Producto más vendido");
+ txt(a.top?"**"+a.top.n+"**: se vendieron **"+a.top.cant+" piezas**, con un ingreso de **$"+a.top.monto.toFixed(2)+"**.":"Sin ventas en el día.");
+ sec(4,"🐌","Producto menos vendido");
+ txt(a.low&&a.n?"**"+a.low.n+"**: se vendieron únicamente **"+a.low.cant+" piezas**.":"Sin datos suficientes.");
+ let k=5;const pro=datos.productos.filter(p=>p.promo>0);
+ if(pro.length){sec(k++,"🔥","Promociones activas");pro.forEach(p=>txt("**"+p.nombre+"**: "+p.promo+"% de descuento (de $"+p.precio+" a **$"+pr(p)+"**)."))}
+ sec(k,"💡","Recomendaciones según las tendencias");
+ recomendaciones(a).forEach(([e,t])=>{ck(14);icon(e,L,y-5,6);txt(t,L+9)});
+ // Firmas
+ ck(40);y+=18;d.setDrawColor(40);d.setLineWidth(.3);d.line(L+5,y,L+70,y);d.line(R-70,y,R-5,y);
+ d.setFont("times","bold");d.setFontSize(10.5);d.text(String(sesion),L+37.5,y+5,{align:"center"});d.text("Dirección / Autoridad",R-37.5,y+5,{align:"center"});
+ d.setFont("times","normal");d.text("Administrador de la cafetería",L+37.5,y+10,{align:"center"});d.text("Vo. Bo.",R-37.5,y+10,{align:"center"});
+ // Pie de página
+ const n=d.getNumberOfPages();for(let i=1;i<=n;i++){d.setPage(i);d.setFont("times","italic");d.setFontSize(9);d.setTextColor(90);d.text(NOMBRE_CAFE+" · "+NOMBRE_INSTITUCION,L,288);d.text("Página "+i+" de "+n,R,288,{align:"right"})}
+ d.setProperties({title:NOMBRE_CAFE+" - Reporte diario"});
+ if(!window.open(d.output("bloburl"),"_blank"))d.save("Reporte_Diario_Tralaleritos.pdf")}
 let ultimaVenta=null;
 function mostrarTicket(v){if(!v)return;ultimaVenta=v;
- $("ticketbody").innerHTML=`<div class="tk-c"><div style="font-size:2.6rem">🦈</div><b>${NOMBRE_CAFE}</b><br>TICKET DE COMPRA<br>Folio: <b>#${v.folio}</b><br>${new Date(v.fecha).toLocaleString("es-MX")}</div>${v.estudiante?`<hr><div>🎓 <b>${v.estudiante.nombre}</b><br>Semestre: ${v.estudiante.semestre} · Grupo: ${v.estudiante.grupo}${v.estudiante.matricula?"<br>Matrícula: "+v.estudiante.matricula:""}<br>${v.estudiante.correo}</div>`:""}<hr>`
+ $("ticketbody").innerHTML=`<div class="tk-c"><div><img class="tklogo" src="logo-escuela.png" alt="" onerror="this.style.display='none'"><img class="tklogo" src="logo-cafeteria.png" alt="" onerror="this.style.display='none'"></div><b>${NOMBRE_CAFE}</b><br>TICKET DE COMPRA<br>Folio: <b>#${v.folio}</b><br>${new Date(v.fecha).toLocaleString("es-MX")}</div>${v.estudiante?`<hr><div>🎓 <b>${v.estudiante.nombre}</b><br>Semestre: ${v.estudiante.semestre} · Grupo: ${v.estudiante.grupo}${v.estudiante.matricula?"<br>Matrícula: "+v.estudiante.matricula:""}<br>${v.estudiante.correo}</div>`:""}<hr>`
  +v.items.map(x=>`<div class="tk-r"><span>${emoji(x.nombre)} ${x.cant} x ${x.nombre}${x.promo>0?" 🔥-"+x.promo+"%":""}</span><span>$${(x.cant*x.precio).toFixed(2)}</span></div>`).join("")
  +`<hr><div class="tk-r"><b>TOTAL</b><b>$${v.total.toFixed(2)}</b></div><div class="tk-r"><span>Recibido</span><span>$${v.recibido.toFixed(2)}</span></div><div class="tk-r"><span>Cambio</span><span>$${v.cambio.toFixed(2)}</span></div><hr><div class="tk-c"><b>¡Gracias por tu compra!</b> 🦈👟<br>Vuelve pronto</div>`;
  $("ticketmodal").classList.remove("hidden")}
 function cerrarTicket(){$("ticketmodal").classList.add("hidden")}
 function ticketPDF(){const v=ultimaVenta;if(!v)return;if(!window.jspdf){alert("No se pudo cargar la librería de PDF. Verifica tu conexión.");return}
- const{jsPDF}=window.jspdf,d=new jsPDF({unit:"mm",format:[80,100+v.items.length*7+(v.estudiante?36:0)]});let y=8;
- d.addImage(eimg("🦈"),"PNG",32,y,16,16);y+=22;
+ const{jsPDF}=window.jspdf,d=new jsPDF({unit:"mm",format:[80,106+v.items.length*7+(v.estudiante?36:0)]});let y=8;
+ if(LOGOS.escuela)d.addImage(LOGOS.escuela,"PNG",12,y,22,22);if(LOGOS.cafe)d.addImage(LOGOS.cafe,"PNG",46,y,22,22);if(!LOGOS.escuela&&!LOGOS.cafe)d.addImage(eimg("🦈"),"PNG",32,y,16,16);y+=(LOGOS.escuela||LOGOS.cafe)?26:22;
  const c=(t,sz=10,b=false)=>{d.setFont("helvetica",b?"bold":"normal");d.setFontSize(sz);d.splitTextToSize(t,72).forEach(l=>{d.text(l,40,y,{align:"center"});y+=sz/2+1.5})};
  const raya=()=>c("- - - - - - - - - - - - - - - - - - - -",8);
  const r=(a,b,bold)=>{d.setFont("helvetica",bold?"bold":"normal");d.setFontSize(9);d.text(a,6,y);d.text(b,74,y,{align:"right"});y+=5.5};
@@ -273,5 +348,6 @@ function ticketPDF(){const v=ultimaVenta;if(!v)return;if(!window.jspdf){alert("N
  raya();r("TOTAL","$"+v.total.toFixed(2),true);r("Recibido","$"+v.recibido.toFixed(2));r("Cambio","$"+v.cambio.toFixed(2));raya();
  c("Gracias por tu compra!",10,true);y+=1;d.addImage(eimg("👟"),"PNG",34,y,12,12);
  d.save("Ticket_Tralaleritos_"+v.folio+".pdf")}
+cargarLogo(LOGO_ESCUELA,"escuela");cargarLogo(LOGO_CAFE,"cafe");
 cargar();
 </script></body></html>
